@@ -1,0 +1,43 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "scan"
+  scan:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    environment: prod
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # getting CAST Highlight variables that the command line will use to automatically upload scan results to the right application on the CAST Highlight portal
+      - name: get company and application ids
+        run:
+          cat .github/workflows/hl.env >> $GITHUB_ENV
+
+      # CAST Highlight command line
+      - name: scan project source code
+        run: |
+         docker run --rm -v $(pwd):/s -v /tmp:/w  casthighlight/hl-agent-cli \
+                             --sourceDir /s \
+                             --workingDir /w \
+                             --tokenAuth ${{ secrets.CAST_HIGHLIGHT_API_TOKEN }} \
+                             --companyId ${{ env.companyId }} \
+                             --applicationId ${{ env.applicationId }} \
+                             --serverUrl ${{ env.serverUrl }}
